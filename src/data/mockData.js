@@ -11,7 +11,7 @@ const getProductImageUrl = (category, id) => {
   return `https://source.unsplash.com/300x300/?${categoryKeywords[category] || 'fashion'}&sig=${id}`;
 };
 
-const generateMockProducts = () => {
+ export const generateMockProducts = () => {
   const categories = ["Dresses", "Tops", "Bottoms", "Outerwear", "Accessories"];
   const brands = ["Nouva Africa", "StyleTerrain", "Audrey Collection", "Urban Fashion", "Elite Designs"];
   
@@ -113,4 +113,5 @@ export default {
   fetchProducts,
   getCategories,
   createProduct,
+  generateMockProducts
 };

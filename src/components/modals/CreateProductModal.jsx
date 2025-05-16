@@ -1,21 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { FiUpload, FiLink, FiX, FiCheckCircle } from 'react-icons/fi';
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 
-const CreateProductModal = ({ isOpen, onClose, onCreateProduct, categories }) => {
+const CreateProductModal = ({ 
+  isOpen, 
+  onClose, 
+  onCreateProduct, 
+  categories, 
+  initialData = {}, 
+  title,
+  successMessage = "Product created successfully",
+  onNotify = () => {} // Function to trigger notification
+}) => {
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    price: '',
-    category: '',
-    stock: '',
-    brand: '',
-    imageUrl: 'https://picsum.photos/seed/new/300/300', // Default placeholder image
+    name: initialData.name || '',
+    description: initialData.description || '',
+    price: initialData.price || '',
+    category: initialData.category || '',
+    stock: initialData.stock || '',
+    brand: initialData.brand || '',
+    imageUrl: initialData.imageUrl || 'https://picsum.photos/seed/new/300/300', // Default placeholder image
   });
-
+  
+  const [imageSource, setImageSource] = useState('url');
+  const [previewImage, setPreviewImage] = useState('');
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,6 +43,24 @@ const CreateProductModal = ({ isOpen, onClose, onCreateProduct, categories }) =>
         ...errors,
         [name]: '',
       });
+    }
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPreviewImage(reader.result);
+      setImageSource('upload');
+    };
+    reader.readAsDataURL(file);
+    setFormData({...formData, imageUrl: ''});
+    
+    // Clear any image errors
+    if (errors.image) {
+      setErrors({...errors, image: ''});
     }
   };
 
@@ -64,6 +95,13 @@ const CreateProductModal = ({ isOpen, onClose, onCreateProduct, categories }) =>
       newErrors.brand = 'Brand is required';
     }
     
+    // Validate either URL or uploaded image exists
+    if (imageSource === 'url' && !formData.imageUrl.trim()) {
+      newErrors.image = 'Image URL is required';
+    } else if (imageSource === 'upload' && !previewImage) {
+      newErrors.image = 'Image upload is required';
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -78,55 +116,124 @@ const CreateProductModal = ({ isOpen, onClose, onCreateProduct, categories }) =>
     setIsSubmitting(true);
     
     try {
+      const finalImage = imageSource === 'upload' ? previewImage : formData.imageUrl;
+      
       // Convert numeric strings to numbers
       const productData = {
         ...formData,
+        imageUrl: finalImage,
         price: Number(formData.price),
         stock: Number(formData.stock),
-        rating: 0, // New products start with no ratings
+        rating: initialData.rating || 0,
+        id: initialData.id || Date.now()
       };
       
       await onCreateProduct(productData);
+      
+      // Show notification instead of alert
+      onNotify({
+        message: `${productData.name} ${successMessage}`,
+        variant: 'success'
+      });
+      
+      // Close modal
       onClose();
       
-      // Reset form
-      setFormData({
-        name: '',
-        description: '',
-        price: '',
-        category: '',
-        stock: '',
-        brand: '',
-        imageUrl: 'https://picsum.photos/seed/new/300/300',
-      });
+      // Reset form if not editing
+      if (!initialData.id) {
+        setFormData({
+          name: '',
+          description: '',
+          price: '',
+          category: '',
+          stock: '',
+          brand: '',
+          imageUrl: 'https://picsum.photos/seed/new/300/300',
+        });
+        setPreviewImage('');
+        setImageSource('url');
+      }
     } catch (error) {
-      console.error('Error creating product:', error);
+      console.error('Error creating/updating product:', error);
+      onNotify({
+        message: `Error: ${error.message || 'Failed to process product'}`,
+        variant: 'error'
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Create New Product"
-      footer={
-        <>
-          <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            form="create-product-form"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Creating...' : 'Create Product'}
-          </Button>
-        </>
-      }
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      title={title || (initialData.id ? `Edit ${initialData.name}` : "Create New Product")}
     >
       <form id="create-product-form" onSubmit={handleSubmit} className="space-y-4">
+        {/* Image Upload Section */}
+        <div>
+          <div className="flex gap-4 mb-2">
+            <Button 
+              type="button" 
+              variant={imageSource === 'url' ? 'primary' : 'ghost'} 
+              onClick={() => setImageSource('url')}
+              icon={<FiLink />}
+            >
+              URL
+            </Button>
+            <Button 
+              type="button" 
+              variant={imageSource === 'upload' ? 'primary' : 'ghost'} 
+              onClick={() => {
+                setImageSource('upload');
+                fileInputRef.current?.click();
+              }}
+              icon={<FiUpload />}
+            >
+              Upload
+            </Button>
+            <input 
+              type="file" 
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+              accept="image/*"
+              className="hidden"
+            />
+          </div>
+          
+          {imageSource === 'url' ? (
+            <Input
+              label="Image URL"
+              name="imageUrl"
+              value={formData.imageUrl}
+              onChange={handleChange}
+              placeholder="https://example.com/image.jpg"
+              error={errors.image}
+            />
+          ) : previewImage ? (
+            <div className="mt-2">
+              <img src={previewImage} alt="Preview" className="h-32 object-contain mx-auto" />
+              <Button 
+                type="button" 
+                variant="ghost" 
+                onClick={() => setPreviewImage('')}
+                icon={<FiX />}
+                className="mt-2"
+              >
+                Remove
+              </Button>
+            </div>
+          ) : (
+            <div className="border-2 border-dashed rounded-lg p-8 text-center">
+              <FiUpload className="mx-auto h-8 w-8 text-gray-400" />
+              <p className="mt-2 text-sm text-gray-600">Click to upload or drag and drop</p>
+              {errors.image && <p className="mt-1 text-sm text-red-600">{errors.image}</p>}
+            </div>
+          )}
+        </div>
+
+        {/* Other form fields */}
         <Input
           label="Product Name"
           name="name"
@@ -215,30 +322,23 @@ const CreateProductModal = ({ isOpen, onClose, onCreateProduct, categories }) =>
           />
         </div>
         
-        <Input
-          label="Image URL (optional)"
-          name="imageUrl"
-          value={formData.imageUrl}
-          onChange={handleChange}
-          placeholder="Link to product image"
-        />
-        
-        {formData.imageUrl && (
-          <div className="mt-2">
-            <p className="text-sm font-medium text-gray-700 mb-1">Image Preview</p>
-            <div className="w-32 h-32 rounded border border-gray-300 overflow-hidden">
-              <img
-                src={formData.imageUrl}
-                alt="Product preview"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = 'https://via.placeholder.com/300x300?text=No+Image';
-                }}
-              />
-            </div>
-          </div>
-        )}
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          <Button 
+            type="button" 
+            variant="ghost" 
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            icon={<FiCheckCircle />}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (initialData.id ? 'Updating...' : 'Creating...') : (initialData.id ? 'Update' : 'Create')}
+          </Button>
+        </div>
       </form>
     </Modal>
   );
