@@ -17,19 +17,28 @@ const ProductCard = ({ product, onDelete, onEdit }) => {
     setImageError(true);
   };
 
-  // Function to handle local image paths
-  const getImagePath = (imageUrl) => {
-    // If it's already a full URL (for external images), return as is
-    if (imageUrl.startsWith('http')) {
-      return imageUrl;
+  const getImageSource = (imageUrl) => {
+    try {
+      // Handle webpack module objects
+      if (imageUrl && typeof imageUrl === 'object') {
+        return imageUrl.default || imageUrl;
+      }
+      
+      // Handle string paths
+      if (typeof imageUrl === 'string') {
+        // For external URLs
+        if (imageUrl.startsWith('http')) return imageUrl;
+        
+        // For local paths - adjust based on your setup
+        return imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
+      }
+      
+      // Fallback to empty string or placeholder
+      return '';
+    } catch (error) {
+      console.error('Error resolving image URL:', error);
+      return '';
     }
-    
-    // For local images, ensure the path is correct
-    if (!imageUrl.startsWith('/images/')) {
-      return `/images${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
-    }
-    
-    return imageUrl;
   };
 
   return (
@@ -49,7 +58,7 @@ const ProductCard = ({ product, onDelete, onEdit }) => {
           </div>
         ) : (
           <img 
-            src={getImagePath(product.imageUrl)}
+            src={getImageSource(product.imageUrl)}
             alt={`${product.name} - ${product.brand}`}
             className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
             onLoad={() => setImageLoaded(true)}
