@@ -1,3 +1,4 @@
+// src/components/dashboard/ProductCard.js
 import React, { useState } from 'react';
 import { FiEdit2, FiTrash2, FiStar, FiImage } from 'react-icons/fi';
 
@@ -11,6 +12,26 @@ const ProductCard = ({ product, onDelete, onEdit }) => {
     maximumFractionDigits: 0
   });
 
+  const handleImageError = () => {
+    console.error(`Failed to load image: ${product.imageUrl}`);
+    setImageError(true);
+  };
+
+  // Function to handle local image paths
+  const getImagePath = (imageUrl) => {
+    // If it's already a full URL (for external images), return as is
+    if (imageUrl.startsWith('http')) {
+      return imageUrl;
+    }
+    
+    // For local images, ensure the path is correct
+    if (!imageUrl.startsWith('/images/')) {
+      return `/images${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+    }
+    
+    return imageUrl;
+  };
+
   return (
     <div className="bg-white overflow-hidden hover:shadow-lg transition-shadow duration-300 rounded-lg border border-gray-200 flex flex-col h-full">
       {/* Image Container */}
@@ -20,7 +41,7 @@ const ProductCard = ({ product, onDelete, onEdit }) => {
             <div className="animate-pulse bg-gray-200 w-full h-full"></div>
           </div>
         )}
-        
+
         {imageError ? (
           <div className="w-full h-full flex flex-col items-center justify-center bg-gray-200 p-4">
             <FiImage className="w-8 h-8 text-gray-400 mb-2" />
@@ -28,16 +49,16 @@ const ProductCard = ({ product, onDelete, onEdit }) => {
           </div>
         ) : (
           <img 
-            src={product.imageUrl}
+            src={getImagePath(product.imageUrl)}
             alt={`${product.name} - ${product.brand}`}
             className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
             onLoad={() => setImageLoaded(true)}
-            onError={() => setImageError(true)}
+            onError={handleImageError}
             loading="lazy"
           />
         )}
       </div>
-      
+
       {/* Product Info */}
       <div className="p-4 flex flex-col flex-grow">
         <div className="flex justify-between items-start mb-2">
@@ -49,7 +70,7 @@ const ProductCard = ({ product, onDelete, onEdit }) => {
             {product.category}
           </span>
         </div>
-        
+
         {/* Rating and Price */}
         <div className="flex justify-between items-center mt-2 mb-3">
           <div className="flex items-center mr-2">
@@ -63,7 +84,7 @@ const ProductCard = ({ product, onDelete, onEdit }) => {
           </div>
           <p className="font-bold text-lg text-indigo-700">{formattedPrice}</p>
         </div>
-        
+
         {/* Stock and Actions */}
         <div className="mt-auto flex justify-between items-center pt-3 border-t border-gray-100">
           <span className={`text-xs ${product.stock > 10 ? 'text-green-600' : product.stock > 0 ? 'text-yellow-600' : 'text-red-600'}`}>

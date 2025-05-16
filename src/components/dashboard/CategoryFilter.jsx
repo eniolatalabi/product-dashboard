@@ -3,7 +3,6 @@ import React from 'react';
 const CategoryFilter = ({ categories, selectedCategory, onSelectCategory }) => {
   return (
     <div className="mb-6">
-      <h3 className="text-sm font-medium text-gray-700 mb-2">Filter by Category</h3>
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => onSelectCategory('')}

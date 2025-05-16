@@ -1,17 +1,78 @@
-const getProductImageUrl = (category, id) => {
-  const categoryKeywords = {
-    "Dresses": "women+dress+fashion+elegant",
-    "Tops": "women+top+blouse+shirt",
-    "Bottoms": "women+pants+jeans+skirt",
-    "Outerwear": "women+jacket+coat+cardigan",
-    "Accessories": "women+jewelry+bag+scarf"
-  };
-  
-  // Using Unsplash with category-specific searches and ID-based seed
-  return `https://source.unsplash.com/300x300/?${categoryKeywords[category] || 'fashion'}&sig=${id}`;
+// src/data/mockProducts.js
+const localProductImages = {
+  "Dresses": [
+    "/images/products/dresses/dress1.jpg",
+    "/images/products/dresses/dress2.jpg",
+    "/images/products/dresses/dress3.jpg",
+    "/images/products/dresses/dress4.jpg",
+    "/images/products/dresses/dress5.jpg",
+    "/images/products/dresses/gown1.jpg",
+    "/images/products/dresses/gown2.jpg",
+    "/images/products/dresses/gown3.jpg",
+  ],
+  "Tops": [
+    "/images/products/tops/top1.jpg",
+    "/images/products/tops/top2.jpg",
+    "/images/products/tops/top3.jpg",
+    "/images/products/tops/top4.jpg",
+    "/images/products/tops/outer1.jpg",
+    "/images/products/tops/outer2.jpg",
+    "/images/products/tops/outer3.jpg",
+    "/images/products/tops/outer4.jpg",
+  ],
+  "Bottoms": [
+    "/images/products/bottoms/bottom1.jpg",
+    "/images/products/bottoms/bottom2.jpg",
+    "/images/products/bottoms/bottom3.jpg",
+    "/images/products/bottoms/bottom4.jpg",
+    "/images/products/bottoms/bottom5.jpg",
+    "/images/products/bottoms/bottom6.jpg",
+    "/images/products/bottoms/bottom7.jpg",
+    "/images/products/bottoms/bottom8.jpg",
+    "/images/products/bottoms/skirt1.jpg",
+    "/images/products/bottoms/skirt2.jpg",
+    "/images/products/bottoms/skirt3.jpg",
+    "/images/products/bottoms/skirt4.jpg",
+  ],
+  "Outerwear": [
+    "/images/products/tops/outer1.jpg",
+    "/images/products/tops/outer2.jpg",
+    "/images/products/tops/outer3.jpg",
+    "/images/products/tops/outer4.jpg",
+  ],
+  "Accessories": [
+    "/images/products/accessories/accessories1.jpg",
+    "/images/products/accessories/accessories2.jpg",
+    "/images/products/accessories/accessories3.jpg",
+    "/images/products/accessories/accessories4.jpg",
+    "/images/products/accessories/accessories5.jpg",
+    "/images/products/accessories/accessories6.jpg",
+    "/images/products/accessories/accessories7.jpg",
+    "/images/products/accessories/accessories8.jpg",
+    "/images/products/accessories/accessories9.jpg",
+    "/images/products/accessories/bag1.jpg",
+    "/images/products/accessories/bag2.jpg",
+    "/images/products/accessories/bag3.jpg",
+    "/images/products/accessories/bag4.jpg",
+    "/images/products/accessories/scarf1.jpg",
+    "/images/products/accessories/scarf2.jpg",
+    "/images/products/accessories/scarf3.jpg",
+    "/images/products/accessories/scarf4.jpg",
+  ],
 };
 
- export const generateMockProducts = () => {
+const getProductImageUrl = (category, id) => {
+  const categoryImages = localProductImages[category] || [];
+  
+  if (categoryImages.length === 0) {
+    return "/images/placeholder.jpg";
+  }
+  
+  const imageIndex = (id - 1) % categoryImages.length;
+  return categoryImages[imageIndex];
+};
+
+export const generateMockProducts = () => {
   const categories = ["Dresses", "Tops", "Bottoms", "Outerwear", "Accessories"];
   const brands = ["Nouva Africa", "StyleTerrain", "Audrey Collection", "Urban Fashion", "Elite Designs"];
   
@@ -31,7 +92,7 @@ const getProductImageUrl = (category, id) => {
     } else if (category === "Outerwear") {
       name = `${["Warm", "Light", "Waterproof", "Designer", "Casual"][Math.floor(Math.random() * 5)]} ${["Jacket", "Coat", "Cardigan"][Math.floor(Math.random() * 3)]}`;
     } else {
-      name = `${["Elegant", "Simple", "Statement", "Bold", "Classic"][Math.floor(Math.random() * 5)]} ${["Necklace", "Earrings", "Bracelet", "Scarf", "Hat"][Math.floor(Math.random() * 5)]}`;
+      name = `${["Elegant", "Simple", "Statement", "Bold", "Classic"][Math.floor(Math.random() * 5)]} ${["Necklace", "Earrings", "Bracelet", "Scarf", "Bag"][Math.floor(Math.random() * 5)]}`;
     }
     
     const price = Math.floor(Math.random() * 20) * 25 + 50;
@@ -55,7 +116,6 @@ const getProductImageUrl = (category, id) => {
 
 const mockProducts = generateMockProducts();
 
-// Simulated API endpoints
 export const fetchProducts = ({ page = 1, limit = 10, search = "", category = "" }) => {
   let filteredProducts = [...mockProducts];
   
@@ -94,13 +154,17 @@ export const getCategories = () => {
 };
 
 export const createProduct = (newProduct) => {
+  if (!newProduct.imageUrl && newProduct.category) {
+    newProduct.imageUrl = getProductImageUrl(newProduct.category, mockProducts.length + 1);
+  }
+
   const product = {
     id: mockProducts.length + 1,
     ...newProduct,
     createdAt: new Date().toISOString(),
   };
   
-  mockProducts.push(product);
+  mockProducts.unshift(product); // Add to beginning of array
   
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -109,9 +173,29 @@ export const createProduct = (newProduct) => {
   });
 };
 
+export const updateProduct = (id, updatedProduct) => {
+  const index = mockProducts.findIndex(p => p.id === id);
+  if (index !== -1) {
+    mockProducts[index] = { ...mockProducts[index], ...updatedProduct };
+    return Promise.resolve(mockProducts[index]);
+  }
+  return Promise.reject(new Error("Product not found"));
+};
+
+export const deleteProduct = (id) => {
+  const index = mockProducts.findIndex(p => p.id === id);
+  if (index !== -1) {
+    mockProducts.splice(index, 1);
+    return Promise.resolve(true);
+  }
+  return Promise.reject(new Error("Product not found"));
+};
+
 export default {
   fetchProducts,
   getCategories,
   createProduct,
+  updateProduct,
+  deleteProduct,
   generateMockProducts
 };

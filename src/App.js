@@ -175,7 +175,7 @@ function App() {
       <Sidebar />
       <div className="flex-1 flex flex-col md:ml-64">
         <Header />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main className="bg-white flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             {/* Page header */}
             <div className="pb-5 border-b border-gray-200 sm:flex sm:items-center sm:justify-between">
@@ -201,11 +201,13 @@ function App() {
                   <span className="font-medium">{totalProducts}</span> products
                 </div>
               </div>
+              <div className='mt-4'>
               <CategoryFilter
                 categories={categories}
                 selectedCategory={selectedCategory}
                 onSelectCategory={handleCategoryFilter}
               />
+              </div>
             </div>
             {/* Product list */}
             <ProductList 

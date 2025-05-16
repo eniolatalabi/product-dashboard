@@ -5,7 +5,7 @@ import {
 
 const Header = () => {
   return (
-    <header className="bg-white shadow-sm border-b">
+    <header className="bg-white ">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-0">
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center">
